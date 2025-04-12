@@ -5,16 +5,25 @@ const attendenceSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Subject",
         required: true
-    },
-    student: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
-    },
+    }, 
     date: {
-        type: date,
+        type: Date,
         required: true
-    }
+    },
+    students: [
+        {
+            student: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "User",
+                required: true
+            },
+            status: {
+                type: String,
+                enum: ['present','absent'],
+                default: 'absent'
+            }
+        }
+    ]
 })
 
 export const Attendence = mongoose.model("Attendence", attendenceSchema)

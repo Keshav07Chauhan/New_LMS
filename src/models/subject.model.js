@@ -1,15 +1,20 @@
 import mongoose from "mongoose";
 
 const subjectSchema = new mongoose.Schema({
-    name: {
+    subjectId: {
         type: String,
         required: true
     },
-    student: [{
+    subjectName: {
+        type: String,
+        required: true
+    },
+    subjectTeacher: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
-    }],
-    teacher: [{
+        ref: "User",
+        required: true
+    },
+    subjectStudent: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     }]

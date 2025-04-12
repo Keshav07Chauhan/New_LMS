@@ -1,7 +1,7 @@
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/ApiError.js';
 import { User } from '../models/user.model.js';
-import { uploadOnCloudinary } from '../utils/cloudinary.js';
+import { uploadOnCloudinary, deleteFromCloudinary } from '../utils/cloudinary.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import jwt from 'jsonwebtoken'
 
@@ -45,7 +45,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     const existUser = await User.findOne({
-        $or: [{ userId }, { email }]       //$ is used before operators and the first user with username or email that matches this one will be answer.
+        $or: [{ userId }, { email }]       //$ is used before operators and the first user with userId or email that matches this one will be answer.
     })
 
     if (existUser) {
@@ -73,7 +73,8 @@ const registerUser = asyncHandler(async (req, res) => {
     const user = await User.create({
         fullName,
         userId,
-        avatar: avatar.url,
+        avatar: avatar.secure_url,              //why use secure_url instead of url?
+        avatarPublicId: avatar.public_id,
         // coverImage: coverImage?.url || "",
         role,
         email,
@@ -96,7 +97,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
     //req.body -> data
-    //username or email
+    //userId or email
     //find the user
     //password check
     //access and refresh token generate
@@ -268,19 +269,25 @@ const updateUserAvatar = asyncHandler(async (req,res)=>{
         throw new ApiError(400,"Avatar file is missing")
     }
 
-    //TODO-left: delete old image - assignment
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
 
-    if(!avatar.url){
-        throw new ApiError(400,"Error while uploading on avatar")
+    if(!(avatar.secure_url || avatar.public_id)){
+        throw new ApiError(400,"Error while uploading avatar")
+    }
+
+    //TODO-left: delete old image - assignment
+    const isAvatarDeleted = await deleteFromCloudinary(req.user?.avatarPublicId)
+    if(!isAvatarDeleted){
+        throw new ApiError(400, "Error while deleting avatar")
     }
 
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set:{
-                avatar: avatar.url
+                avatar: avatar.secure_url,
+                avatarPublicId: avatar.public_id
             }
         },
         {new: true}
@@ -297,17 +304,17 @@ const updateUserAvatar = asyncHandler(async (req,res)=>{
 
 const getUserChannelProfile = asyncHandler(async (req,res)=>{
     
-    const  {username} = req.params
+    const  {userId} = req.params
     
-    if(!username?.trim()){
-        throw new ApiError(400,"username is missing")
+    if(!userId?.trim()){
+        throw new ApiError(400,"userId is missing")
     }
 
-    // User.find({username})
+    // User.find({userId})
     const channel = await User.aggregate([
         {
             $match:{
-                username: username?.toLowerCase()
+                userId: userId?.toLowerCase()
             }
         },
         {
@@ -347,7 +354,7 @@ const getUserChannelProfile = asyncHandler(async (req,res)=>{
         {
             $project: {
                 fullname: 1,
-                username: 1,
+                userId: 1,
                 subscribersCount: 1,
                 channelsSubscribedToCount: 1,
                 isSubscribed: 1,

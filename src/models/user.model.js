@@ -28,10 +28,15 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        required: true
+        required: true,
+        enum: ['admin','teacher','student'],
     },
     avatar: {
         type: String,  //cloudinary url
+        required: true
+    },
+    avatarPublicId: {
+        type: String,
         required: true
     },
     refreshToken: {
@@ -39,7 +44,11 @@ const userSchema = new mongoose.Schema({
     },
     feesDue: {
         type: Number
-    }
+    },
+    subject:[{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Subject"
+    }]
 }, { timestamps: true })
 
 userSchema.pre("save", async function (next) {
@@ -57,7 +66,7 @@ userSchema.methods.generateAccessToken = function () {
         {
             _id: this._id,
             email: this.email,
-            username: this.username,
+            userId: this.userId,
             fullname: this.fullname
         },
         process.env.ACCESS_TOKEN_SECRET,

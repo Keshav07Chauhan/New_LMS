@@ -33,7 +33,7 @@ router.route("/current-user").get(verifyJWT, getCurrentUser)
 router.route("/update-account").patch(verifyJWT, updateAccountDetails)
 router.route("/avatar").patch(verifyJWT, upload.single("avatar"), updateUserAvatar)
 
-router.route("/c/:username").get(verifyJWT, getUserChannelProfile)   //when params is used then have to send data from parameter
+router.route("/c/:userId").get(verifyJWT, getUserChannelProfile)   //when params is used then have to send data from parameter
 
 
 export default router;
