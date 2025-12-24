@@ -29,7 +29,11 @@ const userSchema = new mongoose.Schema({
     role: {
         type: String,
         required: true,
-        enum: ['admin','teacher','student'],
+        enum: ['admin','teacher','student','alumni'],
+    },
+    approval:{
+        type: Number,
+        default: 0,
     },
     avatar: {
         type: String,  //cloudinary url

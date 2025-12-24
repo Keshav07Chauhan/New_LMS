@@ -32,14 +32,14 @@ const registerUser = asyncHandler(async (req, res) => {
     // return res
 
 
-    const { fullName, userId, email, password, role} = req.body
+    const { fullName, userId, email, password, role,approval} = req.body
     // console.log("email: ",email);
 
     // if(fullname === ""){
     //     throw new ApiError(400, "fullname is required")
     // }
     if (
-        [fullName, userId, email, password, role].some((field) => field?.trim() === "")
+        [fullName, userId, email, password, role,approval].some((field) => field?.trim() === "")
     ) {
         throw new ApiError(400, "All fields are required")
     }
@@ -78,7 +78,8 @@ const registerUser = asyncHandler(async (req, res) => {
         // coverImage: coverImage?.url || "",
         role,
         email,
-        password
+        password,
+        approval
     })
 
     const createdUser = await User.findById(user._id).select(
@@ -377,6 +378,70 @@ const getUserChannelProfile = asyncHandler(async (req,res)=>{
 
 
 
+//approval of alumni from admin
+// ✅ Admin - Get list of alumni pending approval
+const getApprovalRequestList = asyncHandler(async (req, res) => {
+  if (req.user.role === "admin") {
+    try {
+      const alumniList = await User.find({ role: "alumni", approval: 1 }); // assuming approval 1 = pending
+    //   res.status(200).json({ status: 200, alumniList });
+      return res.status(200).json(
+                  new ApiResponse(200, alumniList, "AlumniList fetched successfully")
+              )
+    } catch (error) {
+      throw new ApiError(403, "AlumniList fetching mai problem");
+    }
+  } else {
+    throw new ApiError(403, "Unauthorized access");
+  }
+});
+
+//Approved Alumni
+const getApprovedAlumniList = asyncHandler(async (req, res) => {
+    try {
+      const alumniList = await User.find({ role: "alumni", approval: 2 }); // assuming approval 1 = pending
+    //   res.status(200).json({ status: 200, alumniList });
+      return res.status(200).json(
+                  new ApiResponse(200, alumniList, "AlumniList fetched successfully")
+              )
+    } catch (error) {
+      throw new ApiError(403, "AlumniList fetching mai problem");
+    }
+});
+
+// ✅ Admin - Approve or reject an alumni
+const approveAlumni = asyncHandler(async (req, res) => {
+  if (req.user.role === "admin") {
+    try {
+      const { userId, approval } = req.body;
+
+      if (!userId || typeof approval === "undefined") {
+        return res.status(400).json({ status: 400, message: "Missing userId or approval" });
+      }
+
+      const user = await User.findOne({userId});
+
+      const updatedUser = await User.findByIdAndUpdate(
+        user._id,
+        { approval },
+        { new: true }
+      );
+
+      if (!updatedUser) {
+        return res.status(404).json({ status: 404, message: "User not found" });
+      }
+
+      res.status(200).json({ status: 200, user: updatedUser });
+    } catch (error) {
+      res.status(500).json({ status: 500, error: error.message });
+    }
+  } else {
+    res.status(403).json({ status: 403, message: "Unauthorized" });
+  }
+});
+
+
+
 export {
     registerUser,
     loginUser,
@@ -386,5 +451,10 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    getUserChannelProfile
+    getUserChannelProfile,
+
+
+    getApprovalRequestList,
+    getApprovedAlumniList,
+    approveAlumni,
 }
